@@ -13,6 +13,7 @@
         socket.on('connect', () => {
             console.log("connected to sever")
         })
+        socket.on('tweet', (tweet) => console.log(tweet))
     </script>
 </body>
 </html>

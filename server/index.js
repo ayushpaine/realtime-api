@@ -20,7 +20,7 @@ const rulesURL = "https://api.twitter.com/2/tweets/search/stream/rules";
 const streamURL =
   "https://api.twitter.com/2/tweets/search/stream?tweet.fields=public_metrics&expansions=author_id";
 
-const rules = [{ value: "giveaway" }];
+const rules = [{ value: "coding" }];
 
 async function getRules() {
   const response = await needle("get", rulesURL, {
@@ -62,7 +62,7 @@ async function deleteRules(rules) {
   return response.body;
 }
 
-function streamTweets() {
+function streamTweets(socket) {
   const stream = needle.get(streamURL, {
     headers: {
       Authorization: `Bearer ${TOKEN}`,
@@ -72,26 +72,24 @@ function streamTweets() {
   stream.on("data", (data) => {
     try {
       const json = JSON.parse(data);
+      socket.emit("tweet", json);
     } catch (err) {}
   });
 }
 
-io.on("connection", () => {
+io.on("connection", async () => {
   console.log("Client connected...");
+  let currentRules;
+  try {
+    currentRules = await getRules();
+    await deleteRules(currentRules);
+    await setRules();
+  } catch (err) {
+    console.log(err);
+    process.exit(1);
+  }
+
+  streamTweets(io);
 });
-
-// (async () => {
-//   let currentRules;
-//   try {
-//     currentRules = await getRules();
-//     await deleteRules(currentRules);
-//     await setRules();
-//   } catch (err) {
-//     console.log(err);
-//     process.exit(1);
-//   }
-
-//   streamTweets();
-// })();
 
 server.listen(PORT, () => console.log(`Listening on port ${PORT}`));
